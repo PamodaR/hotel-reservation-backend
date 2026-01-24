@@ -17,12 +17,14 @@ public class User {
     private String password;
 
     private String fullName;
-    private String email;
-    private String role; // ADMIN, STAFF, etc.
 
-    // Constructors
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    private String role;
+
     public User() {
-        this.role = "ADMIN";
+        this.role = "USER";
     }
 
     public User(String username, String password, String fullName, String email) {
@@ -30,7 +32,7 @@ public class User {
         this.password = password;
         this.fullName = fullName;
         this.email = email;
-        this.role = "ADMIN";
+        this.role = "USER";
     }
 
     // Getters & Setters
