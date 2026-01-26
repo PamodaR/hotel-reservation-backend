@@ -68,7 +68,7 @@ public class AuthController {
             user.setFullName(registerRequest.getName());
             user.setEmail(registerRequest.getEmail());
             user.setPassword(registerRequest.getPassword());
-            user.setRole("USER");
+            user.setRole(registerRequest.getRole());
 
             User registered = authService.register(user);
 
@@ -122,6 +122,7 @@ public class AuthController {
     public static class RegisterRequest {
         private String name;
         private String email;
+        private String role;
         private String password;
         private String confirmPassword;
 
@@ -139,6 +140,14 @@ public class AuthController {
 
         public void setEmail(String email) {
             this.email = email;
+        }
+
+        public String getRole() {
+            return role;
+        }
+
+        public void setRole(String role) {
+            this.role = role;
         }
 
         public String getPassword() {

@@ -52,13 +52,20 @@ public class AuthService {
             throw new IllegalArgumentException("Username already exists");
         }
 
-        // Hash the password before saving
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Set default role if not provided
+        // Validate and set role
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
+        } else {
+            // Validate that role is either ADMIN or USER
+            String role = user.getRole().toUpperCase();
+            if (!role.equals("ADMIN") && !role.equals("USER")) {
+                throw new IllegalArgumentException("Invalid role. Must be ADMIN or USER");
+            }
+            user.setRole(role);
         }
+
+        // Hash the password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         return userRepository.save(user);
     }
