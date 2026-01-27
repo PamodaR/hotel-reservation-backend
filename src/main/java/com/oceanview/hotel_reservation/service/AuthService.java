@@ -5,6 +5,8 @@ import com.oceanview.hotel_reservation.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class AuthService {
 
@@ -56,10 +58,10 @@ public class AuthService {
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
         } else {
-            // Validate that role is either ADMIN or USER
+            // Validate that role is either ADMIN, STAFF, or USER
             String role = user.getRole().toUpperCase();
-            if (!role.equals("ADMIN") && !role.equals("USER")) {
-                throw new IllegalArgumentException("Invalid role. Must be ADMIN or USER");
+            if (!role.equals("ADMIN") && !role.equals("STAFF") && !role.equals("USER")) {
+                throw new IllegalArgumentException("Invalid role. Must be ADMIN, STAFF, or USER");
             }
             user.setRole(role);
         }
@@ -73,5 +75,61 @@ public class AuthService {
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    }
+
+    // NEW METHODS FOR MEMBER MANAGEMENT
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    }
+
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException("User not found with id: " + id);
+        }
+        userRepository.deleteById(id);
+        System.out.println("User deleted successfully with id: " + id);
+    }
+
+    public User updateUser(Long id, String fullName, String email, String role, String password) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        // Update full name if provided
+        if (fullName != null && !fullName.trim().isEmpty()) {
+            user.setFullName(fullName);
+        }
+
+        // Update email if provided and not already taken by another user
+        if (email != null && !email.trim().isEmpty()) {
+            if (!email.equals(user.getEmail()) && userRepository.existsByEmail(email)) {
+                throw new RuntimeException("Email already exists");
+            }
+            user.setEmail(email);
+            user.setUsername(email); // Keep username in sync with email
+        }
+
+        // Update role if provided
+        if (role != null && !role.trim().isEmpty()) {
+            String roleUpper = role.toUpperCase();
+            if (!roleUpper.equals("ADMIN") && !roleUpper.equals("STAFF") && !roleUpper.equals("USER")) {
+                throw new RuntimeException("Invalid role. Must be ADMIN, STAFF, or USER");
+            }
+            user.setRole(roleUpper);
+        }
+
+        // Update password if provided
+        if (password != null && !password.isEmpty()) {
+            user.setPassword(passwordEncoder.encode(password));
+        }
+
+        User updatedUser = userRepository.save(user);
+        System.out.println("User updated successfully: " + updatedUser.getEmail());
+        return updatedUser;
     }
 }
