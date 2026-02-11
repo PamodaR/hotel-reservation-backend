@@ -8,9 +8,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/members")
+@RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
@@ -20,38 +21,53 @@ public class UserController {
         this.authService = authService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<User>> getAllMembers() {
-        try {
-            List<User> users = authService.getAllUsers();
-            System.out.println("Fetched " + users.size() + " members");
-            return ResponseEntity.ok(users);
-        } catch (Exception e) {
-            System.out.println("Error fetching members: " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
+    // Shared helper to build user response map
+    private Map<String, Object> buildUserMap(User user) {
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", user.getId());
+        userMap.put("username", user.getUsername() != null ? user.getUsername() : "");
+        userMap.put("fullName", user.getFullName() != null ? user.getFullName() : "");
+        userMap.put("email", user.getEmail() != null ? user.getEmail() : "");
+        userMap.put("role", user.getRole());
+        userMap.put("phone", user.getPhone() != null ? user.getPhone() : "");
+        userMap.put("documentId", user.getDocumentId() != null ? user.getDocumentId() : "");
+        userMap.put("documentType", user.getDocumentType() != null ? user.getDocumentType() : "");
+        return userMap;
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getMemberById(@PathVariable Long id) {
+    // Get all users (Admin only)
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllUsers() {
         try {
-            User user = authService.getUserById(id);
-            return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
+            List<User> users = authService.getAllUsers();
+
+            List<Map<String, Object>> userList = users.stream()
+                    .map(this::buildUserMap)
+                    .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("users", userList);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("message", e.getMessage());
+            response.put("message", "Failed to fetch users: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMember(@PathVariable Long id) {
+    // Get user by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
-            authService.deleteUser(id);
+            User user = authService.getUserById(id);
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Member deleted successfully");
+            response.put("user", buildUserMap(user));
+
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, Object> response = new HashMap<>();
@@ -61,27 +77,45 @@ public class UserController {
         }
     }
 
+    // Update user (Admin only)
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateMember(@PathVariable Long id, @RequestBody UpdateMemberRequest request) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest request) {
         try {
             User updatedUser = authService.updateUser(
                     id,
                     request.getFullName(),
                     request.getEmail(),
                     request.getRole(),
-                    request.getPassword()
+                    request.getPassword(),
+                    request.getPhone(),
+                    request.getDocumentId(),
+                    request.getDocumentType()
             );
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Member updated successfully");
-            response.put("user", Map.of(
-                    "id", updatedUser.getId(),
-                    "username", updatedUser.getUsername() != null ? updatedUser.getUsername() : "",
-                    "fullName", updatedUser.getFullName() != null ? updatedUser.getFullName() : "",
-                    "email", updatedUser.getEmail() != null ? updatedUser.getEmail() : "",
-                    "role", updatedUser.getRole()
-            ));
+            response.put("message", "User updated successfully");
+            response.put("user", buildUserMap(updatedUser));
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // Delete user (Admin only)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        try {
+            authService.deleteUser(id);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "User deleted successfully");
+
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, Object> response = new HashMap<>();
@@ -92,42 +126,34 @@ public class UserController {
     }
 
     // Inner class for update request
-    public static class UpdateMemberRequest {
+    public static class UpdateUserRequest {
         private String fullName;
         private String email;
         private String role;
         private String password;
+        private String phone;
+        private String documentId;
+        private String documentType;
 
-        public String getFullName() {
-            return fullName;
-        }
+        public String getFullName() { return fullName; }
+        public void setFullName(String fullName) { this.fullName = fullName; }
 
-        public void setFullName(String fullName) {
-            this.fullName = fullName;
-        }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
 
-        public String getEmail() {
-            return email;
-        }
+        public String getRole() { return role; }
+        public void setRole(String role) { this.role = role; }
 
-        public void setEmail(String email) {
-            this.email = email;
-        }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
 
-        public String getRole() {
-            return role;
-        }
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
 
-        public void setRole(String role) {
-            this.role = role;
-        }
+        public String getDocumentId() { return documentId; }
+        public void setDocumentId(String documentId) { this.documentId = documentId; }
 
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
+        public String getDocumentType() { return documentType; }
+        public void setDocumentType(String documentType) { this.documentType = documentType; }
     }
 }

@@ -54,11 +54,9 @@ public class AuthService {
             throw new IllegalArgumentException("Username already exists");
         }
 
-        // Validate and set role
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
         } else {
-            // Validate that role is either ADMIN, STAFF, or USER
             String role = user.getRole().toUpperCase();
             if (!role.equals("ADMIN") && !role.equals("STAFF") && !role.equals("USER")) {
                 throw new IllegalArgumentException("Invalid role. Must be ADMIN, STAFF, or USER");
@@ -66,7 +64,6 @@ public class AuthService {
             user.setRole(role);
         }
 
-        // Hash the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         return userRepository.save(user);
@@ -76,8 +73,6 @@ public class AuthService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
     }
-
-    // NEW METHODS FOR MEMBER MANAGEMENT
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -96,25 +91,23 @@ public class AuthService {
         System.out.println("User deleted successfully with id: " + id);
     }
 
-    public User updateUser(Long id, String fullName, String email, String role, String password) {
+    public User updateUser(Long id, String fullName, String email, String role,
+                           String password, String phone, String documentId, String documentType) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
-        // Update full name if provided
         if (fullName != null && !fullName.trim().isEmpty()) {
             user.setFullName(fullName);
         }
 
-        // Update email if provided and not already taken by another user
         if (email != null && !email.trim().isEmpty()) {
             if (!email.equals(user.getEmail()) && userRepository.existsByEmail(email)) {
                 throw new RuntimeException("Email already exists");
             }
             user.setEmail(email);
-            user.setUsername(email); // Keep username in sync with email
+            user.setUsername(email);
         }
 
-        // Update role if provided
         if (role != null && !role.trim().isEmpty()) {
             String roleUpper = role.toUpperCase();
             if (!roleUpper.equals("ADMIN") && !roleUpper.equals("STAFF") && !roleUpper.equals("USER")) {
@@ -123,9 +116,20 @@ public class AuthService {
             user.setRole(roleUpper);
         }
 
-        // Update password if provided
         if (password != null && !password.isEmpty()) {
             user.setPassword(passwordEncoder.encode(password));
+        }
+
+        if (phone != null && !phone.trim().isEmpty()) {
+            user.setPhone(phone);
+        }
+
+        if (documentId != null && !documentId.trim().isEmpty()) {
+            user.setDocumentId(documentId);
+        }
+
+        if (documentType != null && !documentType.trim().isEmpty()) {
+            user.setDocumentType(documentType);
         }
 
         User updatedUser = userRepository.save(user);

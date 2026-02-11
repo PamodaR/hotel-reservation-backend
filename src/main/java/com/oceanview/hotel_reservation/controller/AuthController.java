@@ -29,15 +29,9 @@ public class AuthController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Login successful");
-            response.put("user", Map.of(
-                    "id", user.getId(),
-                    "username", user.getUsername() != null ? user.getUsername() : "",
-                    "fullName", user.getFullName() != null ? user.getFullName() : "",
-                    "email", user.getEmail() != null ? user.getEmail() : "",
-                    "role", user.getRole()
-            ));
+            response.put("user", buildUserMap(user));
 
-            System.out.println("Login successful for: " + user.getEmail());
+            System.out.println("Login successful for: " + user.getEmail() + " with role: " + user.getRole());
             return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
@@ -55,7 +49,6 @@ public class AuthController {
         try {
             System.out.println("Registration attempt for: " + registerRequest.getEmail());
 
-            // Validate password match
             if (!registerRequest.getPassword().equals(registerRequest.getConfirmPassword())) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
@@ -64,26 +57,23 @@ public class AuthController {
             }
 
             User user = new User();
-            user.setUsername(registerRequest.getEmail()); // Use email as username
+            user.setUsername(registerRequest.getEmail());
             user.setFullName(registerRequest.getName());
             user.setEmail(registerRequest.getEmail());
             user.setPassword(registerRequest.getPassword());
             user.setRole(registerRequest.getRole());
+            user.setPhone(registerRequest.getPhone());
+            user.setDocumentId(registerRequest.getDocumentId());
+            user.setDocumentType(registerRequest.getDocumentType());
 
             User registered = authService.register(user);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Registration successful");
-            response.put("user", Map.of(
-                    "id", registered.getId(),
-                    "username", registered.getUsername() != null ? registered.getUsername() : "",
-                    "fullName", registered.getFullName() != null ? registered.getFullName() : "",
-                    "email", registered.getEmail() != null ? registered.getEmail() : "",
-                    "role", registered.getRole()
-            ));
+            response.put("user", buildUserMap(registered));
 
-            System.out.println("Registration successful for: " + registered.getEmail());
+            System.out.println("Registration successful for: " + registered.getEmail() + " with role: " + registered.getRole());
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
@@ -96,26 +86,48 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifySession(@RequestParam Long userId) {
+        try {
+            User user = authService.getUserById(userId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("user", buildUserMap(user));
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Invalid session");
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // Shared helper to build user response map
+    private Map<String, Object> buildUserMap(User user) {
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", user.getId());
+        userMap.put("username", user.getUsername() != null ? user.getUsername() : "");
+        userMap.put("fullName", user.getFullName() != null ? user.getFullName() : "");
+        userMap.put("email", user.getEmail() != null ? user.getEmail() : "");
+        userMap.put("role", user.getRole());
+        userMap.put("phone", user.getPhone() != null ? user.getPhone() : "");
+        userMap.put("documentId", user.getDocumentId() != null ? user.getDocumentId() : "");
+        userMap.put("documentType", user.getDocumentType() != null ? user.getDocumentType() : "");
+        return userMap;
+    }
+
     // Inner class for login request
     public static class LoginRequest {
         private String email;
         private String password;
 
-        public String getEmail() {
-            return email;
-        }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
 
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
     }
 
     // Inner class for register request
@@ -125,45 +137,32 @@ public class AuthController {
         private String role;
         private String password;
         private String confirmPassword;
+        private String phone;
+        private String documentId;
+        private String documentType;
 
-        public String getName() {
-            return name;
-        }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
 
-        public void setName(String name) {
-            this.name = name;
-        }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
 
-        public String getEmail() {
-            return email;
-        }
+        public String getRole() { return role; }
+        public void setRole(String role) { this.role = role; }
 
-        public void setEmail(String email) {
-            this.email = email;
-        }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
 
-        public String getRole() {
-            return role;
-        }
+        public String getConfirmPassword() { return confirmPassword; }
+        public void setConfirmPassword(String confirmPassword) { this.confirmPassword = confirmPassword; }
 
-        public void setRole(String role) {
-            this.role = role;
-        }
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
 
-        public String getPassword() {
-            return password;
-        }
+        public String getDocumentId() { return documentId; }
+        public void setDocumentId(String documentId) { this.documentId = documentId; }
 
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public String getConfirmPassword() {
-            return confirmPassword;
-        }
-
-        public void setConfirmPassword(String confirmPassword) {
-            this.confirmPassword = confirmPassword;
-        }
+        public String getDocumentType() { return documentType; }
+        public void setDocumentType(String documentType) { this.documentType = documentType; }
     }
 }

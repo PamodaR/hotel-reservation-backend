@@ -23,6 +23,14 @@ public class User {
 
     private String role;
 
+    @Column(name = "phone_number")
+    private String phone;
+
+    @Column(name = "id_passport")
+    private String documentId;
+
+    private String documentType;
+
     public User() {
         this.role = "USER";
     }
@@ -35,7 +43,6 @@ public class User {
         this.role = "USER";
     }
 
-    // Getters & Setters
     public Long getId() {
         return id;
     }
@@ -82,5 +89,29 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getDocumentId() {
+        return documentId;
+    }
+
+    public void setDocumentId(String documentId) {
+        this.documentId = documentId;
+    }
+
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public void setDocumentType(String documentType) {
+        this.documentType = documentType;
     }
 }
